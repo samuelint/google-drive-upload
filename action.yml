@@ -1,4 +1,4 @@
-name: "google-drive-upload"
+name: "simple-google-drive-upload"
 description: "A simple GitHub action to upload files to google drive (and allow large files)"
 
 inputs:
