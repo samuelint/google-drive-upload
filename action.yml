@@ -1,0 +1,52 @@
+name: "google-drive-upload"
+description: "A simple GitHub action to upload files to google drive (and allow large files)"
+
+inputs:
+  folder_id:
+    description: "Google Drive folder ID to upload to"
+    required: true
+  service_account:
+    description: "Google Drive service account JSON"
+    required: true
+  source_path:
+    description: "Source path to upload"
+    required: true
+  destination_path:
+    description: "Destination path in Google Drive"
+    required: false
+    default: ""
+  upload_cutoff:
+    description: "Upload cutoff size (e.g. 8M, 16M)"
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup Rclone
+      uses: AnimMouse/setup-rclone@v1
+      with:
+        rclone_config: |
+          [google_drive]
+          type = drive
+          scope = drive
+          service_account_file = $RCLONE_CONFIG_DIR/service-account-file.json
+          root_folder_id = ${{ inputs.folder_id }}
+        disable_base64: true
+
+    - name: Add Rclone service account file
+      uses: AnimMouse/setup-rclone/service-account-file@v1
+      with:
+        service_account_filename: service-account-file.json
+        service_account_file: ${{ inputs.service_account }}
+
+    - name: Upload files
+      shell: bash
+      run: |
+        CUTOFF_OPTION=$([ -n "${{ inputs.upload_cutoff }}" ] && echo "--drive-upload-cutoff=${{ inputs.upload_cutoff }}" || echo "")
+        # Expand glob patterns in source_path
+        for file in ${{ inputs.source_path }}; do
+          if [ -e "$file" ]; then
+            rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
+          fi
+        done
