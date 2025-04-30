@@ -1,5 +1,9 @@
 name: "simple-google-drive-upload"
 description: "A simple GitHub action to upload files to google drive (and allow large files)"
+author: Samuel Magny
+branding:
+  icon: "upload"
+  color: "blue"
 
 inputs:
   folder_id:
