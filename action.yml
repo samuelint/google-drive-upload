@@ -48,9 +48,24 @@ runs:
       shell: bash
       run: |
         CUTOFF_OPTION=$([ -n "${{ inputs.upload_cutoff }}" ] && echo "--drive-upload-cutoff=${{ inputs.upload_cutoff }}" || echo "")
-        # Expand glob patterns in source_path
-        for file in ${{ inputs.source_path }}; do
-          if [ -e "$file" ]; then
-            rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
-          fi
+        
+        # Enable extended globbing and globstar for ** pattern support
+        shopt -s globstar nullglob extglob
+        
+        # Process source_path as multi-line input
+        echo "${{ inputs.source_path }}" | while IFS= read -r pattern || [ -n "$pattern" ]; do
+          # Skip empty lines
+          [ -z "$pattern" ] && continue
+          
+          echo "Finding files matching pattern: $pattern"
+          # Using globstar to expand ** patterns
+          for file in $pattern; do
+            if [ -e "$file" ]; then
+              echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
+              rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
+            fi
+          done
         done
+        
+        # Disable globstar
+        shopt -u globstar nullglob extglob
