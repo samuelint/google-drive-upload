@@ -61,14 +61,21 @@ runs:
           [ -z "$pattern" ] && continue
           
           echo "Finding files matching pattern: $pattern"
-          # Using globstar to expand ** patterns
-          for file in $pattern; do
-            if [ -e "$file" ]; then
-              echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
-              rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
-              FILES_FOUND=1
-            fi
-          done
+          
+          # Handle the pattern differently to support complex globs
+          matching_files=($(eval echo $pattern))
+          
+          if [ ${#matching_files[@]} -eq 0 ]; then
+            echo "Warning: No files found matching pattern: $pattern"
+          else
+            for file in "${matching_files[@]}"; do
+              if [ -e "$file" ]; then
+                echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
+                rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
+                FILES_FOUND=1
+              fi
+            done
+          fi
         done
         
         # Disable globstar
