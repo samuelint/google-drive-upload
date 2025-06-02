@@ -51,6 +51,14 @@ runs:
     - name: Upload files
       shell: bash
       run: |
+        # Make sure we're using bash version 4+ that supports globstar
+        if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+          shopt -s globstar nullglob
+        else
+          echo "::error::Bash version 4+ is required for globstar support"
+          exit 1
+        fi
+        
         DEBUG=${{ inputs.debug }}
         INPUT_PATHS=${{ inputs.source_path }}
         CUTOFF_OPTION=$([ -n "${{ inputs.upload_cutoff }}" ] && echo "--drive-upload-cutoff=${{ inputs.upload_cutoff }}" || echo "")
@@ -58,17 +66,9 @@ runs:
         # Create a temporary file to store all matched file paths
         MATCHED_FILES=$(mktemp)
         
-        # Make sure we're using bash version 4+ that supports globstar
-        if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
-          shopt -s globstar nullglob
-          for file in $INPUT_PATHS; do
-            echo "$file" >> "$MATCHED_FILES"
-          done
-        else
-          echo "::error::Bash version 4+ is required for globstar support"
-          rm "$MATCHED_FILES"
-          exit 1
-        fi
+        for file in $INPUT_PATHS; do
+          echo "$file" >> "$MATCHED_FILES"
+        done
 
         if [ "$DEBUG" = true ]; then
           cat "$MATCHED_FILES"
