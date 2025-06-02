@@ -23,6 +23,10 @@ inputs:
     description: "Upload cutoff size (e.g. 8M, 16M)"
     required: false
     default: ""
+  debug:
+    description: "Debug mode"
+    required: false
+    default: false
 
 runs:
   using: "composite"
@@ -47,42 +51,41 @@ runs:
     - name: Upload files
       shell: bash
       run: |
+        DEBUG=${{ inputs.debug }}
+        INPUT_PATHS=${{ inputs.source_path }}
         CUTOFF_OPTION=$([ -n "${{ inputs.upload_cutoff }}" ] && echo "--drive-upload-cutoff=${{ inputs.upload_cutoff }}" || echo "")
         
-        # Enable extended globbing and globstar for ** pattern support
-        shopt -s globstar nullglob extglob
+        # Create a temporary file to store all matched file paths
+        MATCHED_FILES=$(mktemp)
         
-        # Track if we found any files
-        FILES_FOUND=0
-        
-        # Process source_path as multi-line input
-        echo "${{ inputs.source_path }}" | while IFS= read -r pattern || [ -n "$pattern" ]; do
-          # Skip empty lines
-          [ -z "$pattern" ] && continue
-          
-          echo "Finding files matching pattern: $pattern"
-          
-          # Handle the pattern differently to support complex globs
-          matching_files=($(eval echo $pattern))
-          
-          if [ ${#matching_files[@]} -eq 0 ]; then
-            echo "Warning: No files found matching pattern: $pattern"
-          else
-            for file in "${matching_files[@]}"; do
-              if [ -e "$file" ]; then
-                echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
-                rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
-                FILES_FOUND=1
-              fi
-            done
-          fi
-        done
-        
-        # Disable globstar
-        shopt -u globstar nullglob extglob
-        
-        # Fail the action if no files were found
-        if [ $FILES_FOUND -eq 0 ]; then
-          echo "::error::No files found matching the provided patterns"
+        # Make sure we're using bash version 4+ that supports globstar
+        if [[ ${BASH_VERSINFO[0]} -ge 4 ]]; then
+          shopt -s globstar nullglob
+          for file in $INPUT_PATHS; do
+            echo "$file" >> "$MATCHED_FILES"
+          done
+        else
+          echo "::error::Bash version 4+ is required for globstar support"
+          rm "$MATCHED_FILES"
           exit 1
         fi
+
+        if [ "$DEBUG" = true ]; then
+          cat "$MATCHED_FILES"
+        fi
+
+        # Check if we found any files
+        if [ ! -s "$MATCHED_FILES" ]; then
+            echo "::error::No files found matching any of the provided paths"
+            rm "$MATCHED_FILES"
+            exit 1
+        fi
+        
+        # Upload each file
+        while IFS= read -r file; do
+          echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
+          rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
+        done < "$MATCHED_FILES"
+        
+        # Cleanup
+        rm "$MATCHED_FILES"
