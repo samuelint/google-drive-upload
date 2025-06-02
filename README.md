@@ -12,6 +12,41 @@ A simple GitHub action to upload files to Google Drive (including support for la
 
 #### If you find this project useful, please give it a star ⭐!
 
+## Usage example
+
+### Simple
+```yml
+- name: Upload to Google Drive
+  uses: samuelint/google-drive-upload@v1.0.1
+  with:
+    folder_id: <your folder id>
+    service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
+    source_path: your_file.txt
+```
+
+### Multiple Files (using globstar)
+```yml
+- name: Upload to Google Drive
+  uses: samuelint/google-drive-upload@v1.0.1
+  with:
+    folder_id: <your folder id>
+    service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
+    source_path: |
+      some/file/**/some/**/*.dmg
+      some/file/**/some/**/*.msi
+```
+
+### Large File
+```yml
+- name: Upload to Google Drive
+  uses: samuelint/google-drive-upload@v1.0.1
+  with:
+    folder_id: <your folder id>
+    service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
+    source_path: your_large_file.zip
+    upload_cutoff: 10G # <Optional> Set to avoid HTTP 429 on large file upload
+```
+
 ## Inputs
 
 ### `folder_id`
@@ -64,28 +99,6 @@ Required: **NO**.
 
 The cutoff size for switching to chunked uploads. This allows large files to be uploaded without encountering HTTP 429 errors.
 
-## Usage example
-
-### Simple
-```yml
-- name: Upload to Google Drive
-  uses: samuelint/google-drive-upload@v1.0.1
-  with:
-    folder_id: <your folder id>
-    service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
-    source_path: your_file.txt
-```
-
-### Large File
-```yml
-- name: Upload to Google Drive
-  uses: samuelint/google-drive-upload@v1.0.1
-  with:
-    folder_id: <your folder id>
-    service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
-    source_path: your_large_file.zip
-    upload_cutoff: 10G # <Optional> Set to avoid HTTP 429 on large file upload
-```
 
 ### Windows || Linux || Mac
 Use 2 steps with artofact upload strategy.
