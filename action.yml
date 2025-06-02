@@ -87,5 +87,3 @@ runs:
           rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
         done < "$MATCHED_FILES"
         
-        # Cleanup
-        rm "$MATCHED_FILES"
