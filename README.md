@@ -17,7 +17,7 @@ A simple GitHub action to upload files to Google Drive (including support for la
 ### Simple
 ```yml
 - name: Upload to Google Drive
-  uses: samuelint/google-drive-upload@v1.0.1
+  uses: samuelint/google-drive-upload@v1.1.3
   with:
     folder_id: <your folder id>
     service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
@@ -27,7 +27,7 @@ A simple GitHub action to upload files to Google Drive (including support for la
 ### Multiple Files (using globstar)
 ```yml
 - name: Upload to Google Drive
-  uses: samuelint/google-drive-upload@v1.0.1
+  uses: samuelint/google-drive-upload@1.1.3
   with:
     folder_id: <your folder id>
     service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
@@ -39,7 +39,7 @@ A simple GitHub action to upload files to Google Drive (including support for la
 ### Large File
 ```yml
 - name: Upload to Google Drive
-  uses: samuelint/google-drive-upload@v1.0.1
+  uses: samuelint/google-drive-upload@v1.1.3
   with:
     folder_id: <your folder id>
     service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
@@ -142,7 +142,7 @@ jobs:
           path: dist
 
       - name: Upload to Google Drive
-        uses: samuelint/google-drive-upload@v1.0.1
+        uses: samuelint/google-drive-upload@v1.1.3
         with:
           folder_id: <your folder id>
           service_account: ${{ secrets.GOOGLE_DRIVE_SERVICE_ACCOUNT }}
