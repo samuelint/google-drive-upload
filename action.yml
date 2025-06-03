@@ -25,6 +25,7 @@ inputs:
     default: ""
   debug:
     description: "Debug mode"
+    type: boolean
     required: false
     default: false
 
@@ -59,7 +60,7 @@ runs:
           exit 1
         fi
         
-        DEBUG=${{ inputs.debug }}
+        DEBUG="${{ inputs.debug }}"
         INPUT_PATHS=${{ inputs.source_path }}
         CUTOFF_OPTION=$([ -n "${{ inputs.upload_cutoff }}" ] && echo "--drive-upload-cutoff=${{ inputs.upload_cutoff }}" || echo "")
         
