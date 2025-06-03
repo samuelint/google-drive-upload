@@ -61,17 +61,27 @@ runs:
         fi
         
         DEBUG="${{ inputs.debug }}"
-        INPUT_PATHS=${{ inputs.source_path }}
+        INPUT_PATHS="${{ inputs.source_path }}"
         CUTOFF_OPTION=$([ -n "${{ inputs.upload_cutoff }}" ] && echo "--drive-upload-cutoff=${{ inputs.upload_cutoff }}" || echo "")
         
         # Create a temporary file to store all matched file paths
         MATCHED_FILES=$(mktemp)
         
-        for file in $INPUT_PATHS; do
-          echo "$file" >> "$MATCHED_FILES"
-        done
+        # Process each line of input paths
+        while IFS= read -r line; do
+          # Skip empty lines
+          [[ -z "$line" ]] && continue
+          
+          # Expand the glob pattern and add matching files
+          for file in $line; do
+            if [[ -e "$file" ]]; then
+              echo "$file" >> "$MATCHED_FILES"
+            fi
+          done
+        done <<< "$INPUT_PATHS"
 
         if [ "$DEBUG" = true ]; then
+          echo "Matched files:"
           cat "$MATCHED_FILES"
         fi
 
@@ -87,4 +97,7 @@ runs:
           echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
           rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
         done < "$MATCHED_FILES"
+        
+        # Clean up
+        rm "$MATCHED_FILES"
         
