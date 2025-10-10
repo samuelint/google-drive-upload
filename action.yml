@@ -80,24 +80,39 @@ runs:
           done
         done <<< "$INPUT_PATHS"
 
+        # Deduplicate files to avoid uploading the same file multiple times
+        UNIQUE_FILES=$(mktemp)
+        sort -u "$MATCHED_FILES" > "$UNIQUE_FILES"
+        rm "$MATCHED_FILES"
+
         if [ "$DEBUG" = true ]; then
           echo "Matched files:"
-          cat "$MATCHED_FILES"
+          cat "$UNIQUE_FILES"
         fi
 
         # Check if we found any files
-        if [ ! -s "$MATCHED_FILES" ]; then
+        if [ ! -s "$UNIQUE_FILES" ]; then
             echo "::error::No files found matching any of the provided paths"
-            rm "$MATCHED_FILES"
+            rm "$UNIQUE_FILES"
             exit 1
         fi
         
-        # Upload each file
+        # Upload each file (flattened - using just the filename)
         while IFS= read -r file; do
-          echo "Uploading $file to google_drive:${{ inputs.destination_path }}"
-          rclone copy $CUTOFF_OPTION "$file" "google_drive:${{ inputs.destination_path }}"
-        done < "$MATCHED_FILES"
+          # Get just the filename without the directory path
+          filename=$(basename "$file")
+          
+          # Build the destination path
+          if [ -n "${{ inputs.destination_path }}" ]; then
+            dest="google_drive:${{ inputs.destination_path }}/$filename"
+          else
+            dest="google_drive:$filename"
+          fi
+          
+          echo "Uploading $file to $dest"
+          rclone copyto $CUTOFF_OPTION "$file" "$dest"
+        done < "$UNIQUE_FILES"
         
         # Clean up
-        rm "$MATCHED_FILES"
+        rm "$UNIQUE_FILES"
         
